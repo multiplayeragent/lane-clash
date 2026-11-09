@@ -1,0 +1,21 @@
+{
+  "name": "Lane Clash",
+  "genre": "strategy",
+  "dim": "2D",
+  "mode": "Versus",
+  "players": "2",
+  "hook": "Play cards, send units, take their towers.",
+  "how": "Elixir fills over time. Drag a card onto your side and its units march down a lane. Take more towers in two and a half minutes, or their king tower, to win.",
+  "controls": "Drag a card onto the field, or tap a card then tap the field",
+  "uses": [
+    ["Host-run rules", "The host's browser runs every unit and tower; if it leaves, the next player takes over."],
+    ["Bots", "A bot plays the other side when you're alone, and a friend who joins takes over from it."],
+    ["Live sync", "Both players see the same fight, about 10 updates a second."],
+    ["Leaderboard", "Most wins, shown after every match."]
+  ],
+  "ideas": [
+    "Add a spell card that hits an area",
+    "Add a third lane",
+    "Let players build a deck before the match"
+  ]
+}
