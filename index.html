@@ -18,7 +18,7 @@
   #net { position: fixed; bottom: calc(var(--handH, 0px) + 6px); left: 10px; font-size: 12px; opacity: .75; pointer-events: none; white-space: nowrap; text-shadow: 0 1px 2px #000; }
   #over { position: fixed; inset: 0; display: grid; place-items: center; background: #0008; }
   #over[hidden] { display: none; }
-  .box { width: min(340px, 88vw); max-height: 86vh; overflow: auto; padding: 20px; border-radius: 18px; background: #16241b; border: 1px solid #ffffff22; text-align: center; }
+  .box { box-sizing: border-box; width: min(382px, calc(100vw - 32px)); max-height: 86vh; overflow: auto; padding: 20px; border-radius: 18px; background: #16241b; border: 1px solid #ffffff22; text-align: center; }
   .box h2 { margin: 0 0 4px; font-size: 26px; } .box p { margin: 0 0 12px; opacity: .85; font-size: 18px; }
   .box h3 { margin: 6px 0 4px; font-size: 13px; color: #ffd166; text-align: left; }
   .box ol { text-align: left; margin: 0 0 12px; padding-left: 24px; font-size: 14px; min-height: 30px; } .box li span { float: right; }
@@ -197,7 +197,9 @@ function resetWorld(id) {
 function adoptWorld(m) {
   const w = shared("w", null);
   if (!w || w.m !== m.id) return resetWorld(m.id);
-  Object.assign(world, { matchId: m.id, towers: w.tw.slice(), ex: w.ex.map((e) => e / 10), shots: [], bots: [null, null],
+  // Elixir kept filling since that write (the old host may have frozen seconds ago): add it, like myElixir() shows it.
+  const since = Date.now() > m.startAt ? ((performance.now() - (memo.get("w")?.at ?? performance.now())) / CONFIG.elixirMs) * (Date.now() > m.endsAt - CONFIG.doubleMs ? 2 : 1) : 0;
+  Object.assign(world, { matchId: m.id, towers: w.tw.slice(), ex: w.ex.map((e) => Math.min(CONFIG.elixirMax, e / 10 + since)), shots: [], bots: [null, null],
     units: w.u.map(([id, k, side, x, y, hp]) => ({ id, k: KEYS[k], side, x: x / 10, y: y / 10, hp, cd: 0.5, tgt: null, look: 0 })) });
   world.nextId = Math.max(0, ...world.units.map((u) => u.id)) + 1;
 }
@@ -646,7 +648,7 @@ if (!myName) { myName = pickOne(NAME_A) + " " + pickOne(NAME_B); try { localStor
 if (ATTRACT) { Object.assign(CONFIG, { countdownMs: 300, matchMs: 70000, resultsMs: 2000, elixirStart: 8 }); $("hint").style.display = "none"; }
 
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; // never negative: the first frame can be stamped before `last`
   if (now - lastHb > 1000) { lastHb = now; net.me.set("hb", Date.now()); }
   if (isHost()) hostTick(now); else { world.wasHost = false; world.lastTick = 0; }
   const m = match();
