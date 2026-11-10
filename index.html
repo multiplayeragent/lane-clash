@@ -648,6 +648,7 @@ if (!myName) { myName = pickOne(NAME_A) + " " + pickOne(NAME_B); try { localStor
 if (ATTRACT) { Object.assign(CONFIG, { countdownMs: 300, matchMs: 70000, resultsMs: 2000, elixirStart: 8 }); $("hint").style.display = "none"; }
 
 function frame(now) {
+  requestAnimationFrame(frame);
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; // never negative: the first frame can be stamped before `last`
   if (now - lastHb > 1000) { lastHb = now; net.me.set("hb", Date.now()); }
   if (isHost()) hostTick(now); else { world.wasHost = false; world.lastTick = 0; }
@@ -657,7 +658,6 @@ function frame(now) {
     draw(m, dt, now);
     if (now - lastHud > 100) { lastHud = now; hud(m); }
   }
-  requestAnimationFrame(frame);
 }
 
 (async function start() {
