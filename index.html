@@ -22,6 +22,7 @@
   .box h2 { margin: 0 0 4px; font-size: 26px; } .box p { margin: 0 0 12px; opacity: .85; font-size: 18px; }
   .box h3 { margin: 6px 0 4px; font-size: 13px; color: #ffd166; text-align: left; }
   .box ol { text-align: left; margin: 0 0 12px; padding-left: 24px; font-size: 14px; min-height: 30px; } .box li span { float: right; }
+  .box li.note { list-style: none; margin-left: -24px; text-align: center; opacity: .8; } /* a message, not a ranked row */
   .box button { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: #ffd166; color: #2a1d00; font: 800 16px system-ui, sans-serif; cursor: pointer; }
   #safe { position: fixed; bottom: 0; height: 0; padding-bottom: env(safe-area-inset-bottom); visibility: hidden; }
 </style>
@@ -35,7 +36,7 @@
 <div id="hint">Drag a card onto your half of the field</div>
 <div id="over" hidden><div class="box">
   <h2 id="overTitle"></h2><p id="overSub"></p>
-  <h3>Most wins</h3><ol id="board"><li>Loading…</li></ol>
+  <h3>Most wins</h3><ol id="board"><li class="note">Loading…</li></ol>
   <button id="again">Play again</button>
 </div></div>
 <div id="safe"></div>
@@ -606,11 +607,11 @@ function showResults(m, side) {
   $("again").hidden = side < 0;
   if (won) sound(660, 0.4, 0.3);
   const list = $("board");
-  if (!board) { list.innerHTML = "<li>Leaderboards need a connection.</li>"; return; }
-  list.innerHTML = "<li>Loading…</li>";
+  if (!board) { list.innerHTML = "<li class='note'>Leaderboards need a connection.</li>"; return; }
+  list.innerHTML = "<li class='note'>Loading…</li>";
   (won ? board.submit(1, "inc").catch(() => null) : Promise.resolve()).then(() => board.top(10)).then(({ entries }) => {
-    list.innerHTML = entries.length ? entries.map((e) => `<li>${esc(e.username || "Player")}<span>${e.score}</span></li>`).join("") : "<li>No wins yet. Be the first.</li>";
-  }).catch(() => { list.innerHTML = "<li>Couldn't load the leaderboard.</li>"; });
+    list.innerHTML = entries.length ? entries.map((e) => `<li>${esc(e.username || "Player")}<span>${e.score}</span></li>`).join("") : "<li class='note'>No wins yet. Be the first.</li>";
+  }).catch(() => { list.innerHTML = "<li class='note'>Couldn't load the leaderboard.</li>"; });
 }
 function playAgain() { const m = match(); if (!m || m.phase !== "over") return; if (isHost()) hostAgain(net.sessionId, { m: m.id }); else net.send("again", { m: m.id }); }
 function hostAgain(from, d) { const m = match(); if (m && m.phase === "over" && d && d.m === m.id && m.sides.includes(from)) newMatch(m.id + 1, m.sides); }
@@ -620,7 +621,8 @@ $("again").onclick = playAgain;
 let drag = null, pointer = null;
 const slotAt = (x, y) => slots.findIndex((s) => x >= s.x && x <= s.x + s.w && y >= s.y - 12 && y <= s.y + s.h);
 cv.addEventListener("pointerdown", (e) => {
-  e.preventDefault(); pointer = { x: e.clientX, y: e.clientY };
+  e.preventDefault(); if (e.button !== 0) return; // left button or a touch only
+  pointer = { x: e.clientX, y: e.clientY };
   const slot = slotAt(e.clientX, e.clientY);
   if (slot >= 0) { drag = { slot, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false }; cv.setPointerCapture(e.pointerId); return; }
   if (selected >= 0 && e.clientY < H - handH) { const [x, y] = toWorld(e.clientX, e.clientY); deploy(selected, x, y); }
@@ -638,7 +640,9 @@ cv.addEventListener("pointerup", (e) => {
   if (e.clientY < H - handH) { const [x, y] = toWorld(e.clientX, e.clientY); deploy(d.slot, x, y); }
 });
 cv.addEventListener("pointercancel", () => { drag = null; });
-addEventListener("keydown", (e) => { const i = "1234".indexOf(e.key); if (i >= 0) selected = selected === i ? -1 : i; if (e.key === "Escape") selected = -1; });
+cv.addEventListener("contextmenu", (e) => e.preventDefault()); // no browser menu on right-click
+addEventListener("blur", () => { drag = null; }); // switching tabs mid-drag drops the card back in the hand
+addEventListener("keydown", (e) => { const i = ["1", "2", "3", "4"].indexOf(e.code.replace(/^(Digit|Numpad)/, "")); if (i >= 0) selected = selected === i ? -1 : i; if (e.key === "Escape") selected = -1; }); // e.code: works with Shift or Caps Lock too
 document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
 // ── MAIN LOOP ───────────────────────────────────────────────────────────────────────
